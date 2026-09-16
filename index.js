@@ -25,3 +25,4 @@ app.use('/api', (req, res) => {
     console.log('API route accessed', process.env.PORT);
 });
 
+export default app;
