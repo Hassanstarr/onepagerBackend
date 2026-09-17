@@ -89,7 +89,7 @@ const loginUser = async (req, res) => {
     console.log("🔥 FORGOT PASSWORD CONTROLLER HIT");
     console.log("EMAIL USER EXISTS:", !!process.env.EMAIL_USER);
     console.log("EMAIL PASS EXISTS:", !!process.env.EMAIL_PASS);
-    
+
         const { userName, password } = req.body;
 
         if (!userName || !password) {
@@ -170,6 +170,9 @@ const forgotPasswordUser = async (req, res) => {
             });
         }
 
+        console.log("EMAIL USER EXISTS:", !!process.env.EMAIL_USER);
+        console.log("EMAIL PASS EXISTS:", !!process.env.EMAIL_PASS);
+    
         const user = await userModel.findOne({
             userName,
             email,
@@ -192,9 +195,18 @@ const forgotPasswordUser = async (req, res) => {
         user.otpExpires = otpExpires;
         user.otpVerified = false;
 
+        console.log("✅ User found:", user.email);
+        console.log("🔢 OTP generated");
+        console.log("💾 Saving OTP...");
+
         await user.save();
 
+        console.log("✅ OTP saved");
+        console.log("📧 Sending OTP email...");
+
         await sendOTPEmail(user.email, otp);
+
+        console.log("✅ OTP email sent successfully");
 
         return res.status(200).json({
             success: true,
