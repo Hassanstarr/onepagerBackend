@@ -150,6 +150,8 @@ const loginUser = async (req, res) => {
 
 
 const forgotPasswordUser = async (req, res) => {
+    console.log("EMAIL USER:", process.env.EMAIL_USER);
+console.log("EMAIL PASS EXISTS:", !!process.env.EMAIL_PASS);
     try {
         const { userName, email } = req.body;
 
