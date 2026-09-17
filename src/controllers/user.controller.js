@@ -37,12 +37,12 @@ const registerUser = async (req, res) => {
 
         const passwordCheck = passwordValid(password);
 
-        {/* if (!passwordCheck.valid) {
+        if (!passwordCheck.valid) {
             return res.status(400).json({
                 success: false,
                 message: passwordCheck.message
             });
-        } */}
+        }
 
         if (password !== comfirmPassword) {
             return res.status(400).json({
@@ -241,6 +241,15 @@ const resetPasswordUser = async (req, res) => {
             });
         }
 
+        const passwordCheck = passwordValid(newPassword);
+
+        if (!passwordCheck.valid) {
+            return res.status(400).json({
+                success: false,
+                message: passwordCheck.message
+            });
+        }
+
 
         if (newPassword !== comfirmPassword) {
             return res.status(400).json({
@@ -372,6 +381,15 @@ const resetPasswordWithOTPUser = async (req, res) => {
             return res.status(401).json({
                 success: false,
                 message: "Please verify OTP first",
+            });
+        }
+
+        const passwordCheck = passwordValid(newPassword);
+
+        if (!passwordCheck.valid) {
+            return res.status(400).json({
+                success: false,
+                message: passwordCheck.message
             });
         }
 
