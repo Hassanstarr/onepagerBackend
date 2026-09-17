@@ -4,9 +4,9 @@ import userModel from "../models/User.model.js";
 
 const registerUser = async (req, res) => {
     try {
-        const { name, userName, email, password } = req.body;
+        const { name, userName, email, password, comfirmPassword } = req.body;
 
-        if (!name || !userName || !email || !password) {
+        if (!name || !userName || !email || !password || !comfirmPassword) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required",
@@ -28,6 +28,48 @@ const registerUser = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Email already exists",
+            });
+        }
+
+        if(password.length < 8){
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 8 characters long"
+            })
+        }
+
+        if(!/[A-Z]/.test(password)){
+            return res.status(400).json({
+                success: false,
+                message: "Password must contain at least one uppercase character."
+            })
+        }
+
+        if(!/[a-z]/.test(password)){
+            return res.status(400).json({
+                success: false,
+                message: "Password must contain at least one lowercase character,"
+            })
+        }
+
+        if(!/[0-9]/.test(password)){
+            return res.status(400).json({
+                success: false,
+                message: "Passowrd must contain at least one number."
+            })
+        }
+
+        if(!/[!@#$%^&*(),.?":{}|<>_\-\\[\]/;'`~+=]/.test(password)){
+            return res.status(400).json({
+                success: false,
+                message: "Password must contain at least one special character"
+            })
+        }
+
+        if (password !== comfirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Password do not match.",
             });
         }
 
@@ -170,24 +212,48 @@ const forgotPasswordUser = async (req, res) => {
 
 const resetPasswordUser = async (req, res) => {
     try {
-        const { userName, email, newPassword } = req.body;
+        const { password, newPassword, comfirmPassword } = req.body;
 
-        if (!userName || !email || !newPassword) {
+        if (!password || !newPassword || !comfirmPassword) {
             return res.status(400).json({
                 success: false,
                 message: "Username, email and new password are required",
             });
         }
 
-        const user = await userModel.findOne({
-            userName,
-            email,
-        });
+        const user = await userModel.findById(req.user.userId);
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "Username or email is incorrect",
+                message: "User not found",
+            });
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!isPasswordCorrect) {
+            return res.status(400).json({
+                success: false,
+                message: "Old password is incorrect",
+            });
+        }
+
+        if (password === newPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "New password cannot be the same as your current password.",
+            });
+        }
+
+
+        if (newPassword !== comfirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Password do not match.",
             });
         }
 
