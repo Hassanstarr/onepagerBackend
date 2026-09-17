@@ -1,6 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import userModel from "../models/User.model.js";
+import sendOTPEmail from "../utils/sendEmail.js";
+import passwordValid from "../utils/passwordValid.js";
+
 
 const registerUser = async (req, res) => {
     try {
@@ -31,40 +35,14 @@ const registerUser = async (req, res) => {
             });
         }
 
-        if(password.length < 8){
-            return res.status(400).json({
-                success: false,
-                message: "Password must be at least 8 characters long"
-            })
-        }
+        const passwordCheck = passwordValid(password);
 
-        if(!/[A-Z]/.test(password)){
+        {/* if (!passwordCheck.valid) {
             return res.status(400).json({
                 success: false,
-                message: "Password must contain at least one uppercase character."
-            })
-        }
-
-        if(!/[a-z]/.test(password)){
-            return res.status(400).json({
-                success: false,
-                message: "Password must contain at least one lowercase character,"
-            })
-        }
-
-        if(!/[0-9]/.test(password)){
-            return res.status(400).json({
-                success: false,
-                message: "Passowrd must contain at least one number."
-            })
-        }
-
-        if(!/[!@#$%^&*(),.?":{}|<>_\-\\[\]/;'`~+=]/.test(password)){
-            return res.status(400).json({
-                success: false,
-                message: "Password must contain at least one special character"
-            })
-        }
+                message: passwordCheck.message
+            });
+        } */}
 
         if (password !== comfirmPassword) {
             return res.status(400).json({
@@ -193,10 +171,24 @@ const forgotPasswordUser = async (req, res) => {
                 message: "Username or email is incorrect",
             });
         }
+        
+        const otp = crypto.randomInt(100000, 1000000).toString();
+
+        const otpExpires = new Date(
+            Date.now() + 10 * 60 * 1000 //10mins
+        );
+
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+        user.otpVerified = false;
+
+        await user.save();
+
+        await sendOTPEmail(user.email, otp);
 
         return res.status(200).json({
             success: true,
-            message: "Username and email verified",
+            message: "OTP sent to your registered email",
         });
 
     } catch (error) {
@@ -278,5 +270,146 @@ const resetPasswordUser = async (req, res) => {
     }
 };
 
+const verifyOTP = async (req, res) => {
+    try {
 
-export { loginUser, registerUser, forgotPasswordUser, resetPasswordUser };
+        const { userName, email, otp } = req.body;
+
+        if (!userName || !email || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Username, email and OTP are required",
+            });
+        }
+
+        const user = await userModel.findOne({
+            userName,
+            email,
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        if (!user.otp || !user.otpExpires) {
+            return res.status(400).json({
+                success: false,
+                message: "OTP not found. Please request a new OTP.",
+            });
+        }
+
+        if (new Date() > user.otpExpires) {
+
+            user.otp = null;
+            user.otpExpires = null;
+            user.otpVerified = false;
+
+            await user.save();
+
+            return res.status(400).json({
+                success: false,
+                message: "OTP has expired. Please request a new OTP.",
+            });
+        }
+
+        if (user.otp !== otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid OTP",
+            });
+        }
+
+        user.otpVerified = true;
+        user.otp = null;
+        user.otpExpires = null;
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "OTP verified successfully",
+        });
+
+    } catch (error) {
+
+        console.error("OTP verification error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+const resetPasswordWithOTPUser = async (req, res) => {
+    try {
+
+        const { userName, email, newPassword, comfirmPassword } = req.body;
+
+        if (!userName || !email || !newPassword || !comfirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required",
+            });
+        }
+
+        const user = await userModel.findOne({
+            userName,
+            email,
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        if (!user.otpVerified) {
+            return res.status(401).json({
+                success: false,
+                message: "Please verify OTP first",
+            });
+        }
+
+        if (newPassword !== comfirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Passwords do not match",
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(
+            newPassword,
+            10
+        );
+
+        user.password = hashedPassword;
+
+        user.otpVerified = false;
+        user.otp = null;
+        user.otpExpires = null;
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Password reset successfully",
+        });
+
+    } catch (error) {
+
+        console.error("Reset password error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
+
+export { loginUser, registerUser, forgotPasswordUser, resetPasswordUser, verifyOTP, resetPasswordWithOTPUser };

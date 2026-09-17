@@ -1,3 +1,17 @@
+# Dependencies
+node_modules/
+jspm_packages/
+web_modules/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+config.env
+
 # Logs
 logs
 *.log
@@ -5,21 +19,35 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-.env
+# Diagnostic reports (Next.js / Node.js)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+# Runtime data and databases
+pids
+*.pid
+*.seed
+*.pid.lock
+lib-cov
+coverage
+*.lcov
+.nyc_output
+
+# Local databases & storage
+.mongo/
+dump/
+uploads/
+public/uploads/
+
+# IDEs and text editors
+.idea/
+.vscode/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Operating System files
+.DS_Store
+Thumbs.db
