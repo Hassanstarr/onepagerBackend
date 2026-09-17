@@ -84,6 +84,12 @@ const registerUser = async (req, res) => {
 
 const loginUser = async (req, res) => {
     try {
+
+
+    console.log("🔥 FORGOT PASSWORD CONTROLLER HIT");
+    console.log("EMAIL USER EXISTS:", !!process.env.EMAIL_USER);
+    console.log("EMAIL PASS EXISTS:", !!process.env.EMAIL_PASS);
+    
         const { userName, password } = req.body;
 
         if (!userName || !password) {
@@ -150,8 +156,10 @@ const loginUser = async (req, res) => {
 
 
 const forgotPasswordUser = async (req, res) => {
-    console.log("EMAIL USER:", process.env.EMAIL_USER);
-console.log("EMAIL PASS EXISTS:", !!process.env.EMAIL_PASS);
+    
+    console.log("🔥 FORGOT PASSWORD CONTROLLER HIT");
+    console.log("EMAIL USER EXISTS:", !!process.env.EMAIL_USER);
+    console.log("EMAIL PASS EXISTS:", !!process.env.EMAIL_PASS);
     try {
         const { userName, email } = req.body;
 
